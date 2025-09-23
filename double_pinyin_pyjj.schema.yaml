@@ -121,8 +121,8 @@ translator:
     - xform/0(\w)/$1/
     - xlit/QWRTYUIOPSDFGHMJCKLZXVBNAEIOU/qwrtyuiopsdfghmjcklzxvbnaeiou/
     - "xform/(^|[ '])v/$1zh/"
-    - "xform/(^|[ ‘])u/$1ch/"
-    - "xform/(^|[ ‘])i/$1sh/"
+    - "xform/(^|[ '])u/$1ch/"
+    - "xform/(^|[ '])i/$1sh/"
     - xform/([jqxy])v/$1u/
     - xform/([nl])v/$1ü/
 
