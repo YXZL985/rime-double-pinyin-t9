@@ -6,11 +6,12 @@
 
 已收錄以下雙拼方案：
 
-  - 自然碼雙拼
-  - 智能ABC雙拼
-  - 小鶴雙拼
-  - MSPY雙拼
-  - 拼音加加雙拼
+  - 自然碼雙拼 | `double_pinyin`
+  - 智能ABC雙拼 | `double_pinyin_abc`
+  - 小鶴雙拼 | `double_pinyin_flypy`
+  - 微軟雙拼 | `double_pinyin_mspy`
+  - 拼音加加雙拼 | `double_pinyin_pyjj`
+  - 四通雙拼 | `double_pinyin_st`
 
 ## 安裝
 
