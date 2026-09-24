@@ -1,0 +1,157 @@
+# Rime schema
+# encoding: utf-8
+
+schema:
+  schema_id: double_pinyin_gushi_t9
+  name: 辜氏九鍵雙拼
+  version: "0.1"
+  author:
+    - TBD
+  description: |
+    朙月拼音＋辜氏雙拼九鍵方案（數字鍵區 KP_0–KP_9 輸入，編碼即所按數字）。
+    双重映射：數字鍵區按鍵經 key_binder 改發為主行數字入碼（speller alphabet 為 0–9）；
+    主鍵盤區數字鍵在有候選時改發 KP_ 鍵，交由 selector 原生數字選字分支選詞。
+    鍵位（辜氏雙拼公開鍵位圖）：
+      7: iong/ong/ou        8: a,b,c + ai      9: d,f,e,ch + ei/en/er
+      4: g,h,i + ie/iu/ia   5: j,k,l + ang/an  6: m,n,o + uo/un
+      1: p,q,r,s + uang/uan/ao  2: t,u,v,sh,zh + ue/ui
+      3: w,x,y,z + iang/ian/iao/uai/ua  0: eng/ing/in
+    已知限制：
+      - ascii_mode 下數字鍵區同樣被改發入碼（key_binder when:always 所致）。
+      - 九鍵方案存在同碼多音（如 27=zhong/tong），由候選消歧，編碼區顯示原始數字碼。
+      - 勿啟用 ascii_composer/good_old_keypad，否則數字鍵區行為會被劫持。
+      - 若自定義 default.yaml 的 recognizer/patterns 添加了匹配純數字的模式，
+        數字入碼可能被該 translator 劫持，需自行排除。
+    使用：在本機 default.custom.yaml 的 schema_list 中加入
+    `- schema: double_pinyin_gushi_t9` 後重新部署。
+  dependencies:
+    - stroke
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: simplification
+    states: [ 漢字, 汉字 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  processors:
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - reverse_lookup_translator
+    - script_translator
+  filters:
+    - simplifier
+    - uniquifier
+
+speller:
+  alphabet: "0123456789"
+  delimiter: " '"
+  algebra:
+    - derive/^([jqxy])u$/$1v/
+    - xform/^er$/99/
+    # 零聲母元音補寫成兩字母，湊足兩位碼
+    - xform/^([aoe])([ioun])$/$1$1$2/
+    - xform/^([aoe])(ng)?$/$1$1$2/
+    # 韻母鍵位：3=iang/ian/iao/uai/ua  1=uang/uan/ao  7=iong/ong/ou  0=ing/eng/in
+    #           4=ie/iu/ia  5=ang/an  6=uo/un  2=ue/ui  8=ai  9=ei/en
+    - xform/iong$/7/
+    - xform/iang$/3/
+    - xform/uang$/1/
+    - xform/ing$/0/
+    - xform/eng$/0/
+    - xform/ian$/3/
+    - xform/iao$/3/
+    - xform/uai$/3/
+    - xform/[uv]an$/1/
+    - xform/ai$/8/
+    - xform/ei$/9/
+    - xform/ao$/1/
+    - xform/ou$/7/
+    - xform/uo$/6/
+    - xform/[uv]e$/2/
+    - xform/ie$/4/
+    - xform/[uv]n$/6/
+    - xform/ui$/2/
+    - xform/iu$/4/
+    - xform/ia$/4/
+    - xform/ua$/3/
+    - xform/ang$/5/
+    - xform/en$/9/
+    - xform/an$/5/
+    - xform/in$/0/
+    - xform/ong$/7/
+    # 聲母：zh/sh→2，ch→9
+    - xform/^zh/2/
+    - xform/^ch/9/
+    - xform/^sh/2/
+    # 字母鍵位：abc→8 def→9 ghi→4 jkl→5 mno→6 pqrs→1 tuv→2 wxyz→3（26 字母全覆蓋）
+    - xlit/abcdefghijklmnopqrstuvwxyz/88899944455566611112223333/
+
+translator:
+  dictionary: luna_pinyin
+  prism: double_pinyin_gushi_t9
+
+reverse_lookup:
+  dictionary: stroke
+  enable_completion: true
+  prefix: "`"
+  suffix: "'"
+  tips: 〔筆畫〕
+  preedit_format:
+    - xlit/hspnz/一丨丿丶乙/
+  comment_format:
+    - xform/([nl])v/$1ü/
+
+punctuator:
+  import_preset: default
+
+key_binder:
+  import_preset: default
+  bindings:
+    # 九鍵區（數字鍵盤 KP_0–KP_9）改發主行數字 → speller 入碼
+    # 數字一律加引號，避免 YAML 解析為整數標量導致 librime 按字符串讀取失敗
+    - { when: always, accept: KP_0, send: "0" }
+    - { when: always, accept: KP_1, send: "1" }
+    - { when: always, accept: KP_2, send: "2" }
+    - { when: always, accept: KP_3, send: "3" }
+    - { when: always, accept: KP_4, send: "4" }
+    - { when: always, accept: KP_5, send: "5" }
+    - { when: always, accept: KP_6, send: "6" }
+    - { when: always, accept: KP_7, send: "7" }
+    - { when: always, accept: KP_8, send: "8" }
+    - { when: always, accept: KP_9, send: "9" }
+    # 主行數字在有候選時改發 KP_ 鍵 → selector 選字（無菜單時落入 speller 入碼，屬預期）
+    - { when: has_menu, accept: "1", send: KP_1 }
+    - { when: has_menu, accept: "2", send: KP_2 }
+    - { when: has_menu, accept: "3", send: KP_3 }
+    - { when: has_menu, accept: "4", send: KP_4 }
+    - { when: has_menu, accept: "5", send: KP_5 }
+    - { when: has_menu, accept: "6", send: KP_6 }
+    - { when: has_menu, accept: "7", send: KP_7 }
+    - { when: has_menu, accept: "8", send: KP_8 }
+    - { when: has_menu, accept: "9", send: KP_9 }
+    - { when: has_menu, accept: "0", send: KP_0 }
+
+recognizer:
+  import_preset: default
+  patterns:
+    reverse_lookup: "`[a-z]*'?$"
