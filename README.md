@@ -16,7 +16,7 @@
 
 ## 安裝
 
-本方案依賴於
+本方案依賴於（需前置安裝）
 
   - [朙月拼音](https://github.com/rime/rime-luna-pinyin) ℞ **`luna-pinyin`**
 
