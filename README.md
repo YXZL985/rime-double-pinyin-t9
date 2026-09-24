@@ -12,6 +12,7 @@
   - 微軟雙拼 | `double_pinyin_mspy`
   - 拼音加加雙拼 | `double_pinyin_pyjj`
   - 四通雙拼 | `double_pinyin_st`
+  - 辜氏九鍵雙拼（數字鍵區九鍵） | `double_pinyin_gushi_t9`
 
 ## 安裝
 
