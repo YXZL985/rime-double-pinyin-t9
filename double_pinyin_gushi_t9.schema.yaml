@@ -22,6 +22,14 @@ schema:
       - 勿啟用 ascii_composer/good_old_keypad，否則數字鍵區行為會被劫持。
       - 若自定義 default.yaml 的 recognizer/patterns 添加了匹配純數字的模式，
         數字入碼可能被該 translator 劫持，需自行排除。
+      - KP_0 雙重語義由 lua 處理器 zero_commit_space 按碼長奇偶判定：偶數位（完整碼）
+        上屏當前高亮候補（等效空格）；奇數位/空碼照常入碼 0（二期 has_menu 方案因
+        連打時部分匹配候補恆真已廢除）。若部署環境無 lua 插件，自動降級為純入碼，上屏用空格。
+      - 小鍵盤 + - * / 在有候選時移動「候選高亮」（+ 後移=↓、- 前移=↑）或翻頁（* 下頁、/ 上頁），
+        無候選時穿透給應用；依據默認 Horizontal|Stacked 鍵位（未設定 _vertical/_linear 上下文
+        選項時，即小狼毫常見形態）。若某前端把候選欄切到 _linear 鍵位，移動高亮將改由
+        Left/Right 負責，屆時需同步調整本組 send 鍵。
+    本方案依賴 lua/zero_commit_space.lua，需與 schema 一併放入用戶目錄（lua 子目錄）。
     使用：在本機 default.custom.yaml 的 schema_list 中加入
     `- schema: double_pinyin_gushi_t9` 後重新部署。
   dependencies:
@@ -41,6 +49,7 @@ switches:
 engine:
   processors:
     - ascii_composer
+    - lua_processor@*zero_commit_space
     - recognizer
     - key_binder
     - speller
@@ -105,6 +114,11 @@ speller:
     - xform/^sh/2/
     # 字母鍵位：abc→8 def→9 ghi→4 jkl→5 mno→6 pqrs→1 tuv→2 wxyz→3（26 字母全覆蓋）
     - xlit/abcdefghijklmnopqrstuvwxyz/88899944455566611112223333/
+    # 守衛：消掉朙月 m/n 經 xlit 產生的單字符數字碼（本鍵位下 m/n→同為 "6"），
+    # 確保所有音節碼恰為兩位——這是 zero_commit_space 以數字個數奇偶判定
+    # 「完整碼/半碼」的正確性前提（若存在單字符碼，任一數字鍵皆可能是完整
+    # 音節，奇偶即失去意義）。代價：「呣/嗯」單字不可打，屬預取捨。
+    - erase/^[0-9]$/
 
 translator:
   dictionary: luna_pinyin
@@ -150,6 +164,15 @@ key_binder:
     - { when: has_menu, accept: "8", send: KP_8 }
     - { when: has_menu, accept: "9", send: KP_9 }
     - { when: has_menu, accept: "0", send: KP_0 }
+    # 候選導航（數字鍵盤編輯鍵；無候選時這些鍵穿透到應用）
+    # 移動的是「候選高亮」：官方默認鍵位即 Up/Down 前/後移動高亮、Page_Up/Page_Down 翻頁
+    # （home wiki RimeWithSchemata「selector 響應…上下方向鍵」；對應無 _vertical/_linear
+    #   選項時的 Horizontal|Stacked keymap，小狼毫屬此態）。
+    # Left/Right 屬 navigator（移動編碼區編輯光標），不可用於此處。
+    - { when: has_menu, accept: KP_Add, send: Down }        # + 候選高亮後移（下一候選）
+    - { when: has_menu, accept: KP_Subtract, send: Up }     # - 候選高亮前移（上一候選）
+    - { when: has_menu, accept: KP_Multiply, send: Page_Down }   # * 下一頁
+    - { when: has_menu, accept: KP_Divide, send: Page_Up }       # / 上一頁
 
 recognizer:
   import_preset: default
